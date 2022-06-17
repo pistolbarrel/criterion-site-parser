@@ -29,16 +29,7 @@ class CriterionParser:
         return ret_str[0], ret_str[2]
 
     def url_type_helper(self, soup):
-        match = 'Leaving '
-        possible_leaving = []
-        for item in soup.stripped_strings:
-            possible_leaving.append(item)
-            break
-        if possible_leaving[0][:len(match)] == match:
-            possible_leaving[0] = possible_leaving[0].split(' - ')[0]
         series_name, description = self.extract_series_name_and_description(soup)
-        if series_name == 'NoName':
-            series_name = possible_leaving[0]
         return series_name, description
 
     @staticmethod
