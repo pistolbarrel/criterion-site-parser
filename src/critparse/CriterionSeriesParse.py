@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-import CriterionMovieParse
+from critparse import CriterionMovieParse
 import argparse
 
 

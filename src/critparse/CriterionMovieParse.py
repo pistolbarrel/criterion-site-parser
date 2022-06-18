@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import argparse
-import CriterionMiniSeriesParse
+from critparse import CriterionMiniSeriesParse
 
 
 def extract_title_length(table):
