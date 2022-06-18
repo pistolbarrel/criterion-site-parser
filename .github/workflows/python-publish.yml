@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: critparse-site-parser
+name: criterion-site-parser
 
 on:
   release:
