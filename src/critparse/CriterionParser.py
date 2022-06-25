@@ -1,21 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import argparse
-from critparse import CriterionParser, CriterionMovieParse
+from critparse import CriterionParser, CriterionMovieParse, TextOut
 
 
-def print_egrep_section(extracted_episode_info):
-    for movie in extracted_episode_info:
-        title = movie[2]
-        str_end = ' \\([1,2]" *\n'
-        if title[:2] == "A ":
-            title = title[2:]
-            str_end = ', A \\([1,2]" *\n'
-        if title[:4] == "The ":
-            title = title[4:]
-            str_end = ', The \\([1,2]" *\n'
-        output_text = 'egrep "^' + title + str_end[:-1]
-        print(output_text)
 
 
 class CriterionParser:
@@ -23,19 +11,119 @@ class CriterionParser:
         self.url = url
         response = requests.get(url)
         self.soup = BeautifulSoup(response.content, 'html5lib')
-        # print(self.soup.prettify())
-        self.url_type = self.determine_url_type(self.soup)
+        self.url_type = CriterionParser.determine_url_type(self.soup)
         self.series_name = ''
         self.all_movie_parsed_data = []
         self.time = None
         self.extracted_episode_info = None
         self.description = None
 
+    def gather_all_info(self):
+        if self.url_type == 'movie':
+            self.__gather_movie_list_info([['', self.url]])
+        elif self.url_type == 'collection':
+            self.series_name, self.extracted_episode_info = CriterionParser.get_collection_info(self.soup)
+            self.__gather_movie_list_info(self.extracted_episode_info)
+        elif self.url_type == 'edition':
+            self.series_name, self.extracted_episode_info = CriterionParser.get_edition_info(self.soup)
+            self.__gather_movie_list_info(self.extracted_episode_info)
+        else:
+            self.series_name, self.description, self.extracted_episode_info = CriterionParser.get_series_info(self.soup)
+            self.__gather_movie_list_info(self.extracted_episode_info)
+
+    def __gather_movie_list_info(self, movies_list):
+        for movie in movies_list:
+            time, url = movie[0], movie[1]
+            response = requests.get(url)
+            soup = BeautifulSoup(response.content, 'html5lib')
+            url_type = CriterionParser.determine_url_type(soup)
+            if url_type == 'collection':
+                time, url = CriterionParser.extract_collection_title_feature(soup)[0]
+                if time == '0:00':
+                    continue
+            movie_parser = CriterionMovieParse.MovieParse(url, time)
+            self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
+
+    def collect_information_for_api(self):
+        if self.url_type == 'movie':
+            print('Examined ' + self.url)
+            CriterionParser.call_api([['', self.url]], self.series_name)
+        elif self.url_type == 'collection':
+            self.series_name, self.extracted_episode_info = CriterionParser.get_collection_info(self.soup)
+            print('Examined ' + self.url)
+            CriterionParser.call_api(self.extracted_episode_info, self.series_name)
+        elif self.url_type == 'edition':
+            self.series_name, self.extracted_episode_info = CriterionParser.get_edition_info(self.soup)
+            print('Examined ' + self.url)
+            CriterionParser.call_api(self.extracted_episode_info, self.series_name)
+        else:
+            self.series_name, self.description, self.extracted_episode_info = CriterionParser.get_series_info(self.soup)
+            print('Examined ' + self.url)
+            print('+' * 54)
+            print(self.series_name)
+            print(self.description)
+            print('+' * 54)
+            print()
+            print()
+            # self.print_movies_list(self.extracted_episode_info)
+            CriterionParser.call_api(self.extracted_episode_info, self.series_name)
+
+    @staticmethod
+    def get_series_info(soup):
+        series_name, description = CriterionParser.extract_series_name_and_description(soup)
+        series_name = "Criterion:" + series_name
+        series = CriterionParser.extract_episode_time_and_url(soup)
+        next_url = CriterionParser.extract_next_url(soup)
+        while next_url:
+            r = requests.get(next_url)
+            soup = BeautifulSoup(r.content, 'html5lib')
+            next_url = CriterionParser.extract_next_url(soup)
+            series += CriterionParser.extract_episode_time_and_url(soup)
+        return series_name, description, series
+
+    @staticmethod
+    def call_api(movies_list, series_name):
+        episode = 0
+        for movie in movies_list:
+            episode += 1
+            time, url, title = movie
+            response = requests.get(url)
+            soup = BeautifulSoup(response.content, 'html5lib')
+            url_type = CriterionParser.determine_url_type(soup)
+            if url_type == 'collection':
+                time, url = CriterionParser.extract_collection_title_feature(soup)[0]
+            movie_parser = CriterionMovieParse.MovieParse(url)
+            movie_parser.addViaApi(time, series_name)
+
+    @staticmethod
+    def extract_next_url(soup):
+        ret_str = None
+        table = soup.find('div', attrs={'class': 'row loadmore'})
+        if table:
+            for item in table.findAll('a', attrs={'class': 'js-load-more-link'}):
+                ret_str = "https://www.criterionchannel.com" + item['href']
+        return ret_str
+
+    @staticmethod
+    def determine_url_type(soup):
+        match_star = 'Starring '
+        match_edition = 'Criterion Collection Edition '
+        url_type = None
+        one, two = CriterionParser.url_type_helper(soup)
+        if one == 'NoName' and two == 'NoDescription':
+            url_type = 'movie'
+        elif url_type is None and two[:len(match_star)] == match_star:
+            url_type = 'collection'
+        elif url_type is None and one[:len(match_edition)] == match_edition:
+            url_type = 'edition'
+        elif url_type is None:
+            url_type = 'series'
+        return url_type
+
     @staticmethod
     def extract_series_name_and_description(soup):
         match = 'Criterion Collection Edition '
         ret_str = ['NoName', 'NoAddition', 'NoDescription']
-        # print(soup.prettify())
         table = soup.find('div', attrs={'class': 'collection-details grid-padding-left'})
         if table:
             ret_str = []
@@ -45,8 +133,9 @@ class CriterionParser:
                 ret_str[0] = ret_str[1]
         return ret_str[0], ret_str[2]
 
-    def url_type_helper(self, soup):
-        series_name, description = self.extract_series_name_and_description(soup)
+    @staticmethod
+    def url_type_helper(soup):
+        series_name, description = CriterionParser.extract_series_name_and_description(soup)
         return series_name, description
 
     @staticmethod
@@ -72,181 +161,20 @@ class CriterionParser:
                 ret.append(movie)
         return ret
 
-    def get_collection_info(self):
-        series_name, not_used = self.extract_series_name_and_description(self.soup)
+    @staticmethod
+    def get_collection_info(soup):
+        series_name, not_used = CriterionParser.extract_series_name_and_description(soup)
         series_name = "Collection:" + series_name
-        series = self.extract_collection_title_feature(self.soup)
-        series += self.extract_episode_time_and_url(self.soup)
+        series = CriterionParser.extract_collection_title_feature(soup)
+        series += CriterionParser.extract_episode_time_and_url(soup)
         return series_name, series
-
-    def get_edition_info(self):
-        series_name, not_used = self.extract_series_name_and_description(self.soup)
-        series = self.extract_collection_title_feature(self.soup)
-        series += self.extract_episode_time_and_url(self.soup)
-        return series_name, series
-
-    def determine_url_type(self, soup):
-        match_star = 'Starring '
-        match_edition = 'Criterion Collection Edition '
-        url_type = None
-        one, two = self.url_type_helper(soup)
-        if one == 'NoName' and two == 'NoDescription':
-            url_type = 'movie'
-        elif url_type is None and two[:len(match_star)] == match_star:
-            url_type = 'collection'
-        elif url_type is None and one[:len(match_edition)] == match_edition:
-            url_type = 'edition'
-        elif url_type is None:
-            url_type = 'series'
-        return url_type
-
-    def get_series_info(self):
-        series_name, description = self.extract_series_name_and_description(self.soup)
-        series_name = "Criterion:" + series_name
-        series = self.extract_episode_time_and_url(self.soup)
-        next_url = self.extract_next_url(self.soup)
-        while next_url:
-            r = requests.get(next_url)
-            self.soup = BeautifulSoup(r.content, 'html5lib')
-            next_url = self.extract_next_url()
-            series += self.extract_episode_time_and_url()
-        return series_name, description, series
 
     @staticmethod
-    def extract_next_url(soup):
-        ret_str = None
-        table = soup.find('div', attrs={'class': 'row loadmore'})
-        if table:
-            for item in table.findAll('a', attrs={'class': 'js-load-more-link'}):
-                ret_str = "https://www.criterionchannel.com" + item['href']
-        return ret_str
-
-    def print_info(self):
-        if self.url_type == 'movie':
-            print('Examined ' + self.url)
-            self.print_movies_list([['', self.url]])
-        elif self.url_type == 'collection':
-            self.series_name, self.extracted_episode_info = self.get_collection_info()
-            print('Examined ' + self.url)
-            self.print_movies_list(self.extracted_episode_info)
-        elif self.url_type == 'edition':
-            self.series_name, self.extracted_episode_info = self.get_edition_info()
-            print('Examined ' + self.url)
-            self.print_movies_list(self.extracted_episode_info)
-        else:
-            self.series_name, self.description, self.extracted_episode_info = self.get_series_info()
-            print('Examined ' + self.url)
-            print('+' * 54)
-            print(self.series_name)
-            print(self.description)
-            print('+' * 54)
-            print()
-            print()
-            self.print_movies_list(self.extracted_episode_info)
-            print()
-            print()
-            print_egrep_section(self.extracted_episode_info)
-            print()
-            print()
-            self.print_collection_update_info()
-
-    def print_movies_list(self, movies_list):
-        episode = 0
-        for movie in movies_list:
-            episode += 1
-            self.time, url = movie[0], movie[1]
-            response = requests.get(url)
-            soup = BeautifulSoup(response.content, 'html5lib')
-            self.url_type = self.determine_url_type(soup)
-            movie_parser = CriterionMovieParse.MovieParse(url)
-            if not self.time:
-                self.time = movie_parser.get_parsed_info()[7]
-            print('=' * 54)
-            if self.url_type == 'movie':
-                print(episode)
-                print(self.time)
-                if self.series_name:
-                    print(self.series_name)
-                else:
-                    print("NONE")
-            self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
-            movie_parser.print_info(self.time)
-            print('=' * 54)
-            print()
-            print()
-
-    def gather_all_info(self):
-        if self.url_type == 'movie':
-            self.gather_movie_list_info([['', self.url]])
-        elif self.url_type == 'collection':
-            self.series_name, self.extracted_episode_info = self.get_collection_info()
-            self.gather_movie_list_info(self.extracted_episode_info)
-        elif self.url_type == 'edition':
-            self.series_name, self.extracted_episode_info = self.get_edition_info()
-            self.gather_movie_list_info(self.extracted_episode_info)
-        else:
-            self.series_name, self.description, self.extracted_episode_info = self.get_series_info()
-            self.gather_movie_list_info(self.extracted_episode_info)
-
-    def gather_movie_list_info(self, movies_list):
-        for movie in movies_list:
-            time, url = movie[0], movie[1]
-            response = requests.get(url)
-            soup = BeautifulSoup(response.content, 'html5lib')
-            url_type = self.determine_url_type(soup)
-            if url_type == 'collection':
-                time, url = self.extract_collection_title_feature(soup)[0]
-                if time == '0:00':
-                    continue
-            movie_parser = CriterionMovieParse.MovieParse(url, time)
-            self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
-
-    def collect_information_for_api(self):
-        if self.url_type == 'movie':
-            print('Examined ' + self.url)
-            # self.print_movies_list([['', self.url]])
-            self.call_api([['', self.url]])
-        elif self.url_type == 'collection':
-            self.series_name, self.extracted_episode_info = self.get_collection_info()
-            print('Examined ' + self.url)
-            # self.print_movies_list(self.extracted_episode_info)
-            self.call_api(self.extracted_episode_info)
-        elif self.url_type == 'edition':
-            self.series_name, self.extracted_episode_info = self.get_edition_info()
-            print('Examined ' + self.url)
-            # self.print_movies_list(self.extracted_episode_info)
-            self.call_api(self.extracted_episode_info)
-        else:
-            self.series_name, self.description, self.extracted_episode_info = self.get_series_info()
-            print('Examined ' + self.url)
-            print('+' * 54)
-            print(self.series_name)
-            print(self.description)
-            print('+' * 54)
-            print()
-            print()
-            # self.print_movies_list(self.extracted_episode_info)
-            self.call_api(self.extracted_episode_info)
-
-    def call_api(self, movies_list):
-        episode = 0
-        for movie in movies_list:
-            episode += 1
-            time, url, title = movie
-            response = requests.get(url)
-            soup = BeautifulSoup(response.content, 'html5lib')
-            url_type = self.determine_url_type(soup)
-            if url_type == 'collection':
-                time, url = self.extract_collection_title_feature(soup)[0]
-            movie_parser = CriterionMovieParse.MovieParse(url)
-            movie_parser.addViaApi(time, self.series_name)
-
-    def print_collection_update_info(self):
-        all_titles = ""
-        for movie_data in self.all_movie_parsed_data:
-            all_titles += movie_data[2] + "; "
-        print(all_titles[:-2])
-        print(self.series_name)
+    def get_edition_info(soup):
+        series_name, not_used = CriterionParser.extract_series_name_and_description(soup)
+        series = CriterionParser.extract_collection_title_feature(soup)
+        series += CriterionParser.extract_episode_time_and_url(soup)
+        return series_name, series
 
 
 def main():
@@ -256,7 +184,8 @@ def main():
         if args.api:
             parser.collect_information_for_api()
         else:
-            parser.print_info()
+            parser.gather_all_info()
+            TextOut.movie_info_to_text()
 
 
 def process_args():

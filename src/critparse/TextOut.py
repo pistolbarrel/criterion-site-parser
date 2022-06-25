@@ -4,13 +4,13 @@ from collections import namedtuple
 def movie_info_to_text(criterion_parser):
     if criterion_parser.url_type == 'movie':
         print('Examined ' + criterion_parser.url)
-        movies_to_text(criterion_parser)  # [['', criterion_parser.url]]
+        __movies_to_text(criterion_parser)  # [['', criterion_parser.url]]
     elif criterion_parser.url_type == 'collection':
         print('Examined ' + criterion_parser.url)
-        movies_to_text(criterion_parser)  # criterion_parser.extracted_episode_info
+        __movies_to_text(criterion_parser)  # criterion_parser.extracted_episode_info
     elif criterion_parser.url_type == 'edition':
         print('Examined ' + criterion_parser.url)
-        movies_to_text(criterion_parser)  # criterion_parser.extracted_episode_info
+        __movies_to_text(criterion_parser)  # criterion_parser.extracted_episode_info
     else:
         print('Examined ' + criterion_parser.url)
         print('+' * 54)
@@ -19,29 +19,29 @@ def movie_info_to_text(criterion_parser):
         print('+' * 54)
         print()
         print()
-        movies_to_text(criterion_parser)
+        __movies_to_text(criterion_parser)
         print()
         print()
-        egrep_section_to_text(criterion_parser.extracted_episode_info)
+        __egrep_section_to_text(criterion_parser.extracted_episode_info)
         print()
         print()
-        collection_update_info_to_text(criterion_parser.all_movie_parsed_data, criterion_parser.series_name)
+        __collection_update_info_to_text(criterion_parser.all_movie_parsed_data, criterion_parser.series_name)
 
 
-def movies_to_text(criterion_parser):
+def __movies_to_text(criterion_parser):
     MovieInfo = namedtuple("MovieInfo", "just_title year title director country stars descr length url")
     episode = 0
     for movie in criterion_parser.all_movie_parsed_data:
         episode += 1
         print('=' * 54)
         movie_info = MovieInfo(*movie)
-        movie_details_to_text(movie_info, episode, criterion_parser.series_name)
+        __movie_details_to_text(movie_info, episode, criterion_parser.series_name)
         print('=' * 54)
         print()
         print()
 
 
-def movie_details_to_text(movie_info, episode_number, series_name):
+def __movie_details_to_text(movie_info, episode_number, series_name):
     print(episode_number)
     print(movie_info.length)
     if series_name:
@@ -72,7 +72,7 @@ def movie_details_to_text(movie_info, episode_number, series_name):
         print("NONE")
 
 
-def egrep_section_to_text(extracted_episode_info):
+def __egrep_section_to_text(extracted_episode_info):
     for movie in extracted_episode_info:
         title = movie[2]
         str_end = ' \\([1,2]" *\n'
@@ -86,7 +86,7 @@ def egrep_section_to_text(extracted_episode_info):
         print(output_text)
 
 
-def collection_update_info_to_text(all_movie_parsed_data, series_name):
+def __collection_update_info_to_text(all_movie_parsed_data, series_name):
     all_titles = ""
     for movie_data in all_movie_parsed_data:
         all_titles += movie_data[2] + "; "
