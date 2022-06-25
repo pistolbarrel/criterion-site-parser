@@ -157,23 +157,18 @@ class CriterionParser:
             self.time, url = movie[0], movie[1]
             response = requests.get(url)
             soup = BeautifulSoup(response.content, 'html5lib')
-            url_type = self.determine_url_type(soup)
-            if url_type == 'collection':
-                self.time, url = self.extract_collection_title_feature(soup)[0]
-                if self.time == '0:00':
-                    print('=' * 54)
-                    print('Skipping ' + str(episode) + ' : ' + movie[2])
-                    print('=' * 54)
-                    print()
-                    print()
-                    continue
+            self.url_type = self.determine_url_type(soup)
             movie_parser = CriterionMovieParse.MovieParse(url)
+            if not self.time:
+                self.time = movie_parser.get_parsed_info()[7]
             print('=' * 54)
-            if self.url_type != 'movie':
+            if self.url_type == 'movie':
                 print(episode)
                 print(self.time)
-            if self.series_name:
-                print(self.series_name)
+                if self.series_name:
+                    print(self.series_name)
+                else:
+                    print("NONE")
             self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
             movie_parser.print_info(self.time)
             print('=' * 54)
