@@ -1,7 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 import argparse
-from critparse import CriterionMiniSeriesParse
 
 
 def extract_title_length(table):
@@ -17,8 +16,17 @@ def extract_info(table):
     return info
 
 
+def extract_series_title_feature(soup):
+    ret = []
+    table = soup.find('li', attrs={'class': 'js-collection-item'})
+    for item in table.findAll('div', attrs={'class': 'grid-item-padding'}):
+        movie = [item.a.text.strip(), item.a['href']]
+        ret.append(movie)
+    return ret
+
+
 class MovieParse:
-    def __init__(self, url):
+    def __init__(self, url, timeSupplied=None):
         self.url = url
         r = requests.get(url)
         soup = BeautifulSoup(r.content, 'html5lib')
@@ -26,7 +34,7 @@ class MovieParse:
         cmsp_length = None
         if not self.table:
             # desperate attempt to salvage the effort
-            cmsp = CriterionMiniSeriesParse.extract_series_title_feature(soup)
+            cmsp = extract_series_title_feature(soup)
             cmsp_length = cmsp[0][0]
             r = requests.get(cmsp[0][1])
             soup = BeautifulSoup(r.content, 'html5lib')
@@ -102,6 +110,8 @@ class MovieParse:
         self.length = length
         if cmsp_length:
             self.length = cmsp_length
+        if timeSupplied:
+            self.length = timeSupplied
         self.title = title
         self.director = director
         self.country = country.strip()
@@ -110,7 +120,8 @@ class MovieParse:
         self.year = year.strip()
 
     def get_parsed_info(self):
-        return [self.just_title, self.year, self.title, self.director, self.country, self.stars, self.descr]
+        return [self.just_title, self.year, self.title, self.director, self.country, self.stars,
+                self.descr, self.length, self.url]
 
     def print_info(self, supplied_length=None):
 
