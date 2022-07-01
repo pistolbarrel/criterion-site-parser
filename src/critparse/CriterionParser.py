@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import argparse
-from critparse import CriterionParser, CriterionMovieParse, TextOut
+from critparse import CriterionParser, CriterionMovieParse, OutText
 
 # https:\\www.criterionchannel.com
 
@@ -287,7 +287,7 @@ def main():
             parser.collect_information_for_api()
         else:
             parser.gather_all_info()
-            TextOut.movie_info_to_text()
+            OutText.movie_info_to_text()
 
 
 def process_args():
