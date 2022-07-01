@@ -1,3 +1,5 @@
+import json
+
 import requests
 from bs4 import BeautifulSoup
 import argparse
@@ -154,19 +156,21 @@ class MovieParse:
         put_uri = "http://localhost:8080/rest/movie"
         movie_dto = {"title": self.just_title,
                      "year": self.year,
-                     "description": self.descr,
                      "actors": self.stars,
                      "directors": self.director,
                      "countries": self.country,
-                     "collections": collection}
+                     "collections": collection,
+                     "description": self.descr}
         movie_length = self.length
         if supplied_length:
             movie_length = supplied_length
         movie_dto["duration"] = movie_length
 
-        response = requests.put(put_uri, json=movie_dto)
-        if response.status_code != 200:
-            print("Error")
+        # print the json instead of calling api
+        print(json.dumps(movie_dto))
+        # response = requests.put(put_uri, json=movie_dto)
+        # if response.status_code != 200:
+        #     print("Error")
 
 
 def main():
