@@ -59,7 +59,12 @@ class MovieParse:
             stars = stars.replace(',', ';')
             descr = descr + '\n\n' + ex_descr
         if len(info) == 3:
+            # sometimes you are hear but have no stars listed in the movie.
+            # i.e., you have diryrcnty descr1 and descr2. Look for this case
             diryrcnty, stars, descr = info
+            if "Starring" not in stars:
+                descr = stars + "\n\n" + descr
+                stars = ""
             splits = diryrcnty.split('•')
             if len(splits) == 3:
                 director, year, country = splits
