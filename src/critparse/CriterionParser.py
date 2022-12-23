@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import argparse
 from critparse import CriterionParser, CriterionMovieParse, OutText
 
+
 # https:\\www.criterionchannel.com
 
 class CriterionParser:
@@ -20,11 +21,13 @@ class CriterionParser:
         parser.gather_all_info()           // gather the data
         TextOut.movie_info_to_text(parser) // present the data
     """
+
     def __init__(self, url):
         self.url = url
         response = requests.get(url)
         self.soup = BeautifulSoup(response.content, 'html5lib')
         self.url_type = CriterionParser.determine_url_type(self.soup)
+        print(self.url_type)
         self.series_name = ''
         self.all_movie_parsed_data = []
         self.time = None
@@ -195,12 +198,14 @@ class CriterionParser:
             "edition" is a Criterion Edition set of movies.
         """
         match_star = 'Starring '
+        match_directed_by = 'Directed  '
         match_edition = 'Criterion Collection Edition '
         url_type = None
         one, two = CriterionParser.url_type_helper(soup)
         if one == 'NoName' and two == 'NoDescription':
             url_type = 'movie'
-        elif url_type is None and two[:len(match_star)] == match_star:
+        elif url_type is None and (two[:len(match_star)] == match_star
+                                   or two[:len(match_directed_by)] == match_directed_by):
             url_type = 'collection'
         elif url_type is None and one[:len(match_edition)] == match_edition:
             url_type = 'edition'
@@ -287,7 +292,7 @@ def main():
             parser.collect_information_for_api()
         else:
             parser.gather_all_info()
-            OutText.movie_info_to_text()
+            OutText.movie_info_to_text(parser)
 
 
 def process_args():

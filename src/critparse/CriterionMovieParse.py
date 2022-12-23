@@ -130,6 +130,10 @@ class MovieParse:
         return [self.just_title, self.year, self.title, self.director, self.country, self.stars,
                 self.descr, self.length, self.url]
 
+    @staticmethod
+    def valueIfDefinedOrNONE(value):
+        return value if value else "NONE"
+
     def print_info(self, supplied_length=None):
 
         print(self.url)
@@ -137,25 +141,11 @@ class MovieParse:
             print(self.length)
         print(self.title)
         print('##' + self.title + ' Watched')
-        if self.director:
-            print(self.director)
-        else:
-            print("NONE")
 
-        if self.country:
-            print(self.country)
-        else:
-            print("NONE")
-
-        if self.stars:
-            print(self.stars)
-        else:
-            print("NONE")
-        print()
-        if self.descr:
-            print(self.descr)
-        else:
-            print("NONE")
+        print(self.valueIfDefinedOrNONE(self.director))
+        print(self.valueIfDefinedOrNONE(self.country))
+        print(self.valueIfDefinedOrNONE(self.stars))
+        print(self.valueIfDefinedOrNONE(self.descr))
 
     def addViaApi(self, supplied_length=None, collection=None):
         put_uri = "http://localhost:8080/rest/movie"

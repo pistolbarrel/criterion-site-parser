@@ -20,12 +20,13 @@ def movie_info_to_text(criterion_parser):
         print()
         print()
         __movies_to_text(criterion_parser)
-        print()
-        print()
-        __egrep_section_to_text(criterion_parser.extracted_episode_info)
-        print()
-        print()
-        __collection_update_info_to_text(criterion_parser.all_movie_parsed_data, criterion_parser.series_name)
+
+    print()
+    print()
+    __egrep_section_to_text(criterion_parser.extracted_episode_info)
+    print()
+    print()
+    __collection_update_info_to_text(criterion_parser.all_movie_parsed_data, criterion_parser.series_name)
 
 
 def __movies_to_text(criterion_parser):
@@ -75,13 +76,13 @@ def __movie_details_to_text(movie_info, episode_number, series_name):
 def __egrep_section_to_text(extracted_episode_info):
     for movie in extracted_episode_info:
         title = movie[2]
-        str_end = ' \\([1,2]" *\n'
+        str_end = ' \\([1,2,N]" *\n'
         if title[:2] == "A ":
             title = title[2:]
-            str_end = ', A \\([1,2]" *\n'
+            str_end = ', A \\([1,2,N]" *\n'
         if title[:4] == "The ":
             title = title[4:]
-            str_end = ', The \\([1,2]" *\n'
+            str_end = ', The \\([1,2,N]" *\n'
         output_text = 'egrep "^' + title + str_end[:-1]
         print(output_text)
 
