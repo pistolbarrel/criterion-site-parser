@@ -1,6 +1,8 @@
 import json
 from collections import namedtuple
 
+import requests
+
 
 def call_api(movies_list, series_name):
     MovieInfo = namedtuple("MovieInfo", "just_title year title director country stars descr length url")
@@ -25,8 +27,6 @@ def addViaApi(movie, collection=None, supplied_length=None):
         movie_length = supplied_length
     movie_dto["duration"] = movie_length
 
-    # print the json instead of calling api
-    print(json.dumps(movie_dto))
-    # response = requests.put(put_uri, json=movie_dto)
-    # if response.status_code != 200:
-    #     print("Error")
+    response = requests.put(put_uri, json=movie_dto)
+    if response.status_code != 200:
+        print("Error")

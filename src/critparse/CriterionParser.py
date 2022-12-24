@@ -21,13 +21,17 @@ class CriterionParser:
         parser.gather_all_info()           // gather the data
         TextOut.movie_info_to_text(parser) // present the data
     """
+    match_star = 'Starring '
+    match_directed_by = 'Directed by'
+    match_edition = 'Criterion Collection Edition '
 
     def __init__(self, url):
         self.url = url
         response = requests.get(url)
         self.soup = BeautifulSoup(response.content, 'html5lib')
         self.url_type = CriterionParser.determine_url_type(self.soup)
-        print(self.url_type)
+        print("url has been determined to be: " + self.url_type)
+        print()
         self.series_name = ''
         self.all_movie_parsed_data = []
         self.time = None
@@ -50,6 +54,7 @@ class CriterionParser:
             self.__gather_movie_list_info(self.extracted_episode_info)
         else:
             self.series_name, self.description, self.extracted_episode_info = CriterionParser.get_series_info(self.soup)
+            self.__explore_possible_collections(self.extracted_episode_info)
             self.__gather_movie_list_info(self.extracted_episode_info)
 
     def __gather_movie_list_info(self, movies_list):
@@ -72,6 +77,58 @@ class CriterionParser:
                     continue
             movie_parser = CriterionMovieParse.MovieParse(url, time)
             self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
+
+    def __explore_possible_collections(self, movies_list):
+        """
+        This experimental feature attempts to guess a 'collection's url from
+        the url obtained in the movies_list. Using this, and a call to
+        get_collection_info, it will see if the movie has a collection of videos.
+
+        :param movies_list: List of individual movie information. List required
+            to be a minimum of len(2)
+
+        :return: None
+        """
+        print('Discovering collections ...')
+        for movie in movies_list:
+            url = self.guess_collection_url(movie[1])
+            if url == self.url:
+                continue
+            response = requests.get(url)
+            if response.status_code != 200:
+                url = url + '-1'
+                response = requests.get(url)
+                if response.status_code != 200:
+                    print('Trouble with request of: ' + url + ". Giving up.")
+                    continue
+            soup = BeautifulSoup(response.content, 'html5lib')
+            series_name, series = CriterionParser.get_collection_info(soup)
+            if len(series) > 1:
+                # got a live one!
+                if len(series) >= 4:
+                    print("'" + series_name + "' has " + str(len(series)) + " videos.")
+                else:
+                    s = "','"
+                    transposed_series = list(zip(*series))
+                    titles = "'" + s.join(transposed_series[2]) + "'"
+                    print("'" + series_name + "' has " + str(len(series)) + " videos -- " + titles)
+        print()
+        print()
+
+    @staticmethod
+    def guess_collection_url(param):
+        url = param
+        splits = param.split('/')
+        split_len = len(splits)
+        if split_len == 6 and splits[3] == 'videos':
+            # canonical form
+            s = "/"
+            url = s.join(splits[:4])
+        else:
+            s = "/"
+            url = s.join(splits[:3])
+            url = url + s + splits[split_len - 1]
+        return url
 
     def collect_information_for_api(self):
         if self.url_type == 'movie':
@@ -197,11 +254,11 @@ class CriterionParser:
             "collection" represents a cover page to one movie.
             "edition" is a Criterion Edition set of movies.
         """
-        match_star = 'Starring '
-        match_directed_by = 'Directed  '
-        match_edition = 'Criterion Collection Edition '
+        match_star = CriterionParser.match_star
+        match_directed_by = CriterionParser.match_directed_by
+        match_edition = CriterionParser.match_edition
         url_type = None
-        one, two = CriterionParser.url_type_helper(soup)
+        one, two = CriterionParser.extract_collection_name_and_description(soup)
         if one == 'NoName' and two == 'NoDescription':
             url_type = 'movie'
         elif url_type is None and (two[:len(match_star)] == match_star
@@ -220,27 +277,20 @@ class CriterionParser:
 
         :return: tuple of name and description found
         """
-        match = 'Criterion Collection Edition '
+        match_star = CriterionParser.match_star
+        match_directed_by = CriterionParser.match_directed_by
+        match_edition = CriterionParser.match_edition
         ret_str = ['NoName', 'NoAddition', 'NoDescription']
         table = soup.find('div', attrs={'class': 'collection-details grid-padding-left'})
         if table:
             ret_str = []
             for string in table.stripped_strings:
                 ret_str.append(string)
-            if ret_str[1][:len(match)] == match:
+            if ret_str[1][:len(match_edition)] == match_edition:
                 ret_str[0] = ret_str[1]
+            if ret_str[1][:len(match_directed_by)] == match_directed_by and ret_str[2][:len(match_star)] != match_star:
+                ret_str[2] = ret_str[1]
         return ret_str[0], ret_str[2]
-
-    @staticmethod
-    def url_type_helper(soup):
-        """
-        A wrapper for extract_series_name_and_description. Helps make the code more self documenting?/maintainable?
-
-        :param soup: instance to parse/search
-
-        :return: tuple of name and description found
-        """
-        return CriterionParser.extract_collection_name_and_description(soup)
 
     @staticmethod
     def extract_title_feature_from_collection(soup):
