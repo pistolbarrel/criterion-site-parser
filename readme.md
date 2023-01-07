@@ -60,11 +60,11 @@ Birds, The (1963)<br>
 Alfred Hitchcock<br>
 United States<br>
 Tippi Hedren; Rod Taylor; Jessica Tandy<br>
-
+<br>
 A powerful, terrifying study of paranoia and hysteria in the wake of unexplained chaos, THE BIRDS is one of Alfred Hitchcock’s most singular and unforgettable films. It all begins rather innocuously, as a mischievous San Francisco soci
 alite (Tippi Hedren) travels to the coastal town of Bodega Bay to hook up with a rugged lawyer (Rod Taylor) she’s only just met. Once there, however, bizarre things start happening. The birds, you see, are behaving strangely. With impr
 essive special effects and innovative electronic sound design, Hitchcock delivers some of the most harrowing set pieces of his career.<br>
-======================================================
+======================================================<br>
 
 
 ======================================================
