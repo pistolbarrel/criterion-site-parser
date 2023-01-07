@@ -27,6 +27,10 @@ def extract_series_title_feature(soup):
     return ret
 
 
+def valueIfDefinedOrNONE(value):
+    return value if value else "NONE"
+
+
 class MovieParse:
     def __init__(self, url, timeSupplied=None):
         self.url = url
@@ -130,10 +134,6 @@ class MovieParse:
         return [self.just_title, self.year, self.title, self.director, self.country, self.stars,
                 self.descr, self.length, self.url]
 
-    @staticmethod
-    def valueIfDefinedOrNONE(value):
-        return value if value else "NONE"
-
     def print_info(self, supplied_length=None):
 
         print(self.url)
@@ -142,10 +142,10 @@ class MovieParse:
         print(self.title)
         print('##' + self.title + ' Watched')
 
-        print(self.valueIfDefinedOrNONE(self.director))
-        print(self.valueIfDefinedOrNONE(self.country))
-        print(self.valueIfDefinedOrNONE(self.stars))
-        print(self.valueIfDefinedOrNONE(self.descr))
+        print(valueIfDefinedOrNONE(self.director))
+        print(valueIfDefinedOrNONE(self.country))
+        print(valueIfDefinedOrNONE(self.stars))
+        print(valueIfDefinedOrNONE(self.descr))
 
     def addViaApi(self, supplied_length=None, collection=None):
         put_uri = "http://localhost:8080/rest/movie"

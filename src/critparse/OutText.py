@@ -1,4 +1,5 @@
 from collections import namedtuple
+from critparse import CriterionMovieParse
 
 
 def movie_info_to_text(criterion_parser):
@@ -47,32 +48,15 @@ def __movies_to_text(criterion_parser):
 def __movie_details_to_text(movie_info, episode_number, series_name):
     print(episode_number)
     print(movie_info.length)
-    if series_name:
-        print(series_name)
-    else:
-        print("NONE")
+    print(CriterionMovieParse.valueIfDefinedOrNONE(series_name))
     print(movie_info.url)
     print(movie_info.title)
     print('##' + movie_info.title + ' Watched')
-    if movie_info.director:
-        print(movie_info.director)
-    else:
-        print("NONE")
-
-    if movie_info.country:
-        print(movie_info.country)
-    else:
-        print("NONE")
-
-    if movie_info.stars:
-        print(movie_info.stars)
-    else:
-        print("NONE")
+    print(CriterionMovieParse.valueIfDefinedOrNONE(movie_info.director))
+    print(CriterionMovieParse.valueIfDefinedOrNONE(movie_info.country))
+    print(CriterionMovieParse.valueIfDefinedOrNONE(movie_info.stars))
     print()
-    if movie_info.descr:
-        print(movie_info.descr)
-    else:
-        print("NONE")
+    print(CriterionMovieParse.valueIfDefinedOrNONE(movie_info.descr))
 
 
 def __egrep_section_to_text(extracted_episode_info):
