@@ -30,7 +30,7 @@ class CriterionParser:
         response = requests.get(url)
         self.soup = BeautifulSoup(response.content, 'html5lib')
         self.url_type = CriterionParser.determine_url_type(self.soup)
-        print("url has been determined to be: " + self.url_type)
+        print("url has been determined to be: " + str(self.url_type))
         print()
         self.series_name = ''
         self.all_movie_parsed_data = []
@@ -38,7 +38,7 @@ class CriterionParser:
         self.extracted_episode_info = None
         self.description = None
 
-    def gather_all_info(self):
+    def gather_all_info(self, args):
         """
         Main driver method and entry point into data gathering.
 
@@ -54,7 +54,8 @@ class CriterionParser:
             self.__gather_movie_list_info(self.extracted_episode_info)
         else:
             self.series_name, self.description, self.extracted_episode_info = CriterionParser.get_series_info(self.soup)
-            self.__explore_possible_collections(self.extracted_episode_info)
+            if not args.skipdiscovery:
+                self.__explore_possible_collections(self.extracted_episode_info)
             self.__gather_movie_list_info(self.extracted_episode_info)
 
     def __gather_movie_list_info(self, movies_list):
@@ -112,7 +113,6 @@ class CriterionParser:
                     transposed_series = list(zip(*series))
                     titles = "'" + s.join(transposed_series[2]) + "'"
                     print("'" + series_name + "' has " + str(len(series)) + " videos -- " + titles)
-        print()
         print()
 
     @staticmethod

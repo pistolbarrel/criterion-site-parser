@@ -21,12 +21,14 @@ def movie_info_to_text(criterion_parser):
         print()
         __movies_to_text(criterion_parser)
 
-    print()
-    print()
-    __egrep_section_to_text(criterion_parser.extracted_episode_info)
-    print()
-    print()
-    __collection_update_info_to_text(criterion_parser.all_movie_parsed_data, criterion_parser.series_name)
+        print()
+        print()
+        __egrep_section_to_text(criterion_parser.extracted_episode_info)
+
+        if not criterion_parser.url_type == 'movie':
+            print()
+            print()
+            __collection_update_info_to_text(criterion_parser.all_movie_parsed_data, criterion_parser.series_name)
 
 
 def __movies_to_text(criterion_parser):
