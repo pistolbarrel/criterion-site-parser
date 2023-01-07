@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "criterion-site-parser"
-version = "1.1"
+version = "1.1.2"
 description = "Prints movies information parsed from criterionchannel.com"
 readme = "README.md"
 authors = [{ name = "pistolbarrel", email = "gboes@pistolbarrel.net" }]
