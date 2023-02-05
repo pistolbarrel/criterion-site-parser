@@ -79,6 +79,15 @@ class MovieParse:
                 director, year, country = splits
             if len(splits) == 2:
                 year, country = splits
+            # I know of one instance in the Criterion web site  where the country
+            # and year are swapped. It's in the listing for Breathless (1960).
+            # This movie is constantly being added to lists. This is a bit of code
+            # to fix the issue
+            year = year.strip()
+            if not year.isnumeric():
+                # do a simple swap
+                year, country = country, year
+
             if director:
                 director = director.replace("Directed by ", "")
             stars = stars.replace("Starring ", "")
