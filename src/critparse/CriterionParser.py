@@ -29,6 +29,7 @@ class CriterionParser:
         self.url = url
         response = requests.get(url)
         self.soup = BeautifulSoup(response.content, 'html5lib')
+        # collect test content here
         self.url_type = CriterionParser.determine_url_type(self.soup)
         print("url has been determined to be: " + str(self.url_type))
         print()

@@ -34,12 +34,17 @@ def movie_info_to_text(criterion_parser):
 
 def __movies_to_text(criterion_parser):
     MovieInfo = namedtuple("MovieInfo", "just_title year title director country stars descr length url")
+    # if there is only one movie in a collection (a collection of one)
+    # then this is merely an envelope and should not create a collection
+    series_name = criterion_parser.series_name
+    if len(criterion_parser.all_movie_parsed_data) == 1 and criterion_parser.url_type == "collection":
+        series_name = ""
     episode = 0
     for movie in criterion_parser.all_movie_parsed_data:
         episode += 1
         print('=' * 54)
         movie_info = MovieInfo(*movie)
-        __movie_details_to_text(movie_info, episode, criterion_parser.series_name)
+        __movie_details_to_text(movie_info, episode, series_name)
         print('=' * 54)
         print()
         print()
