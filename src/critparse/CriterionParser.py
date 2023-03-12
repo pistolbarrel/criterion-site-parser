@@ -46,7 +46,18 @@ class CriterionParser:
         :return: None
         """
         if self.url_type == 'movie':
-            self.__gather_movie_list_info([['', self.url]])
+            alt_url = self.guess_collection_url(self.url)
+            response = requests.get(alt_url)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html5lib')
+                series_name, series = CriterionParser.get_collection_info(soup)
+                if len(series) > 0:
+                    self.__gather_movie_list_info([series[0]])
+                else:
+                    self.__gather_movie_list_info([['', self.url]])
+            else:
+                self.__gather_movie_list_info([['', self.url]])
+
         elif self.url_type == 'collection':
             self.series_name, self.extracted_episode_info = CriterionParser.get_collection_info(self.soup)
             self.__gather_movie_list_info(self.extracted_episode_info)
