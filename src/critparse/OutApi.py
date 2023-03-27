@@ -4,17 +4,17 @@ from collections import namedtuple
 import requests
 
 
-def call_api(movies_list, series_name, supress_print):
+def call_api(movies_list, series_name, suppress_print):
     MovieInfo = namedtuple("MovieInfo", "just_title year title director country stars descr length url")
     episode = 0
     for movie in movies_list:
         episode += 1
         movie_info = MovieInfo(*movie)
         addViaApi(movie_info, series_name)
-        if not supress_print:
+        if not suppress_print:
             print('Added "' + movie_info.title + '" via api')
 
-    if not supress_print:
+    if not suppress_print:
         print()
 
 

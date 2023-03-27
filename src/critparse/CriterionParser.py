@@ -90,6 +90,9 @@ class CriterionParser:
                     continue
             movie_parser = CriterionMovieParse.MovieParse(url, time)
             self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
+        # a collection of one is not a (named) collection
+        if len(self.all_movie_parsed_data) == 1 and self.url_type == "collection":
+            self.series_name = ""
 
     def __explore_possible_collections(self, movies_list):
         """

@@ -3,6 +3,9 @@ from critparse import CriterionParser, OutText, OutApi
 
 
 def main():
+    """
+    This is the (true) main of the critparse module.
+    """
     args = process_args()
     if args.url:
         parser = CriterionParser.CriterionParser(args.url)
@@ -10,7 +13,9 @@ def main():
         if args.api:
             OutApi.call_api(parser.all_movie_parsed_data, parser.series_name, args.quiet)
         if not args.noprint:
-            OutText.movie_info_to_text(parser)
+            print('Examined ' + parser.url)
+            OutText.movie_info_to_text(parser.url_type, parser.series_name, parser.description,
+                                       parser.all_movie_parsed_data, parser.extracted_episode_info)
 
 
 def process_args():
