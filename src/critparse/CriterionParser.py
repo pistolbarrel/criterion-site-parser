@@ -84,10 +84,13 @@ class CriterionParser:
             response = requests.get(url)
             soup = BeautifulSoup(response.content, 'html5lib')
             url_type = CriterionParser.determine_url_type(soup)
-            if url_type == 'collection':
-                time, url = CriterionParser.extract_title_feature_from_collection(soup)[0]
+            if url_type == 'collection' or url_type == 'edition':
+                time, url, title = CriterionParser.extract_title_feature_from_collection(soup)[0]
                 if time == '0:00':
                     continue
+            elif not url_type:
+                # can't deal with a series or movie list embedded in a series or movie list
+                continue
             movie_parser = CriterionMovieParse.MovieParse(url, time)
             self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
         # a collection of one is not a (named) collection
@@ -264,7 +267,7 @@ class CriterionParser:
         :param soup: instance to search/parse
 
         :return:
-            "" represents a series or movie list.
+            None represents a series or movie list.
             "movie" represents a movie link.
             "collection" represents a cover page to one movie.
             "edition" is a Criterion Edition set of movies.
