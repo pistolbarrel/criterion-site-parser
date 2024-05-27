@@ -73,17 +73,12 @@ def extract_info_len3(info):
         descr = stars + "\n\n" + descr
         stars = ""
     country, director, year = process_diryrcnty(diryrcnty)
-
-    # I know of one instance in the Criterion web site  where the country
-    # and year are swapped. It's in the listing for Breathless (1960).
-    # This movie is constantly being added to lists. This is a bit of code
-    # to fix the issue
-    year = year.strip()
-    if not year.isnumeric():
-        # do a simple swap
-        year, country = country, year
-
     return country, descr, director, stars, year
+
+
+def needs_year_country_swap(year):
+    year = year.strip()
+    return not year.isnumeric()
 
 
 def extract_info_len2(info):
@@ -139,24 +134,34 @@ def sanitize_data(country, director, length, stars, title, year):
         country = country.strip()
     return country, director, length, stars, title, just_title
 
+def parse_info(info):
+    country, descr, director, stars, year = '','','','',''
+    if len(info) == 4:
+        country, descr, director, stars, year = extract_info_len4(info)
+    if len(info) == 3:
+        country, descr, director, stars, year = extract_info_len3(info)
+    if len(info) == 2:
+        country, descr, director, year = extract_info_len2(info)
+    if len(info) == 1:
+        descr = info[0]
+    # I know of one instance in the Criterion web site  where the country
+    # and year are swapped. It's in the listing for Breathless (1960).
+    # This movie is constantly being added to lists. This is a bit of code
+    # to fix the issue
+    if needs_year_country_swap(year):
+        year, country = country, year
+    return country, descr, director, stars, year
+
 
 class MovieParse:
     def __init__(self, url, time_supplied=None):
         self.url = url
         r = requests.get(url)
         cmsp_length, table = establish_table(r.content)
-        diryrcnty, stars, descr, director, year, country = '', '', '', '', '', ''
+        diryrcnty = ''
         title, length = extract_title_length(table)
         info = extract_info(table)
-
-        if len(info) == 4:
-            country, descr, director, stars, year = extract_info_len4(info)
-        if len(info) == 3:
-            country, descr, director, stars, year = extract_info_len3(info)
-        if len(info) == 2:
-            country, descr, director, year = extract_info_len2(info)
-        if len(info) == 1:
-            descr = info[0]
+        country, descr, director, stars, year = parse_info(info)
 
         country, director, length, stars, title, just_title \
             = sanitize_data(country, director, length, stars, title, year)
@@ -173,6 +178,7 @@ class MovieParse:
         self.stars = stars
         self.descr = descr
         self.year = year.strip()
+
 
     def get_parsed_info(self):
         return [self.just_title, self.year, self.title, self.director, self.country, self.stars,

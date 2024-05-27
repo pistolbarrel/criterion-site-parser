@@ -19,7 +19,7 @@ def call_api(movies_list, series_name, suppress_print):
 
 
 def addViaApi(movie, collection=None, supplied_length=None):
-    put_uri = "http://tower.local:8080/rest/movie"
+    put_uri = "http://tower.local:8080/rest/movies"
     movie_dto = {"title": movie.just_title,
                  "year": movie.year,
                  "actors": movie.stars,
