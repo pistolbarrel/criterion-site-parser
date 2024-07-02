@@ -61,6 +61,7 @@ def extract_info_len4(info):
 
 def extract_info_len3(info):
     diryrcnty, stars, descr = info
+
     # hack around episode names for some 'features' and sometimes alternate titles
     if not diryrcnty.find('•') >= 0:
         descr = diryrcnty + "\n\n" + descr
@@ -82,13 +83,18 @@ def needs_year_country_swap(year):
 
 
 def extract_info_len2(info):
-    country = descr = director = year = ''
+    country = descr = director = year = stars = ''
     diryrcnty, descr = info
+    # july 2024 monthly update was terrible, hack around no newline in directed by line
+    if diryrcnty.find("Starring") >= 0:
+        stars = diryrcnty[diryrcnty.find("Starring"):]
+        diryrcnty = diryrcnty[:diryrcnty.find("Starring")]
+
     if '•' in diryrcnty:
         country, director, year = process_diryrcnty(diryrcnty)
     else:
         descr = diryrcnty + '\n\n' + descr
-    return country, descr, director, year
+    return country, descr, director, stars, year
 
 
 def process_diryrcnty(diryrcnty):
@@ -141,7 +147,7 @@ def parse_info(info):
     if len(info) == 3:
         country, descr, director, stars, year = extract_info_len3(info)
     if len(info) == 2:
-        country, descr, director, year = extract_info_len2(info)
+        country, descr, director, stars, year = extract_info_len2(info)
     if len(info) == 1:
         descr = info[0]
     # I know of one instance in the Criterion web site  where the country

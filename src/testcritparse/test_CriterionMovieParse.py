@@ -4,6 +4,16 @@ from bs4 import BeautifulSoup
 from critparse import CriterionMovieParse
 
 
+def test_extract_info_july_debacle():
+    info = ['Directed by Steven Soderbergh • 1998 • United States Starring George Clooney, Jennifer Lopez, Don Cheadle', 'The megawatt star power of George Clooney and Jennifer Lopez propels this sexy, sleekly entertaining Elmore Leonard adaptation.']
+    country, descr, director, stars, year = CriterionMovieParse.parse_info(info)
+    assert country == ' United States '
+    assert descr == 'The megawatt star power of George Clooney and Jennifer Lopez propels this sexy, sleekly entertaining Elmore Leonard adaptation.'
+    assert director == 'Directed by Steven Soderbergh '
+    assert stars == 'Starring George Clooney, Jennifer Lopez, Don Cheadle'
+    assert year == ' 1998 '
+
+
 def test_extract_info4():
     info = ['(“Heads or Tails”)', 'Directed by Guru Dutt • 1954 • India', 'Starring Guru Dutt, Shyama, Jagdish Sethi', 'Guru Dutt blends noir and comedy with delectable results in this tale of Kalu (Dutt), a poor taxi driver in Bombay who finds himself mixed up with two women and organized crime as he attempts to make enough money to marry. O. P. Nayyar’s hugely popular songs helped make this winning mix of humor and suspense one of the first major successes of director-producer Dutt’s career.']
     country, descr, director, stars, year = CriterionMovieParse.parse_info(info)
