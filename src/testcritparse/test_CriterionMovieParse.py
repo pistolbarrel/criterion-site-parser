@@ -14,6 +14,16 @@ def test_extract_info_july_debacle():
     assert year == ' 1998 '
 
 
+def test_extract_info_july_debacle2():
+    info = ['Directed By Joseph M. Newman • 1953 • United States Starring Jeanne Crain, Michael Rennie, Carl Betz', 'The megawatt star power of George Clooney and Jennifer Lopez propels this sexy, sleekly entertaining Elmore Leonard adaptation.']
+    country, descr, director, stars, year = CriterionMovieParse.parse_info(info)
+    assert country == ' United States '
+    assert descr == 'The megawatt star power of George Clooney and Jennifer Lopez propels this sexy, sleekly entertaining Elmore Leonard adaptation.'
+    assert director == 'Directed By Joseph M. Newman '
+    assert stars == 'Starring Jeanne Crain, Michael Rennie, Carl Betz'
+    assert year == ' 1953 '
+
+
 def test_extract_info4():
     info = ['(“Heads or Tails”)', 'Directed by Guru Dutt • 1954 • India', 'Starring Guru Dutt, Shyama, Jagdish Sethi', 'Guru Dutt blends noir and comedy with delectable results in this tale of Kalu (Dutt), a poor taxi driver in Bombay who finds himself mixed up with two women and organized crime as he attempts to make enough money to marry. O. P. Nayyar’s hugely popular songs helped make this winning mix of humor and suspense one of the first major successes of director-producer Dutt’s career.']
     country, descr, director, stars, year = CriterionMovieParse.parse_info(info)
@@ -121,3 +131,19 @@ def test_sanitize_data_3():
     assert ostars == 'Stacy Keach; Jamie Lee Curtis; Marion Edward'
     assert otitle == 'Road Games (1981)'
     assert ojust_title == 'Road Games'
+
+
+def test_sanitize_data_4():
+    country = ' United States '
+    director = 'Directed By Joseph M. Newman '
+    stars = 'Starring Jeanne Crain, Michael Rennie, Carl Betz'
+    year = ' 1953 '
+    length = '1:34:36'
+    title = 'The Wild Bunch'
+    new_country, new_director, new_length, new_stars, new_title, just_title \
+        = CriterionMovieParse.sanitize_data(country, director, length, stars, title, year)
+    assert new_country == 'United States'
+    assert new_director == 'Joseph M. Newman'
+    assert new_stars == 'Jeanne Crain; Michael Rennie; Carl Betz'
+    assert new_title == 'Wild Bunch, The (1953)'
+    assert new_length == length

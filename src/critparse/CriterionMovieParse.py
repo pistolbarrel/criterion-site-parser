@@ -129,7 +129,9 @@ def sanitize_data(country, director, length, stars, title, year):
         length = length.split('•')[1].strip()
 
     if director:
-        director = director.replace("Directed by ", "")
+        director = director.replace("Directed ", "")
+        director = director.replace("by ", "")
+        director = director.replace("By ", "")
         director = director.replace(" and ", ",")
         director = director.replace(",", ";")
         director = director.replace(";;", ";")
@@ -139,6 +141,7 @@ def sanitize_data(country, director, length, stars, title, year):
         country = country.replace(',', ';')
         country = country.strip()
     return country, director, length, stars, title, just_title
+
 
 def parse_info(info):
     country, descr, director, stars, year = '','','','',''
