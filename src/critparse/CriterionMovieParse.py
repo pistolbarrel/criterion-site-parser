@@ -5,226 +5,124 @@ from bs4 import BeautifulSoup
 import argparse
 
 
-def extract_title_length(table):
-    for item in table.findAll('div', attrs={'class': 'contain margin-top-large column small-16'}):
-        return item.h1.text.strip(), item.h5.text.strip()
-
-
-def extract_info(table):
-    info = []
-    for item in table.findAll('div', attrs={'class': 'site-font-secondary-color'}):
-        for string in item.stripped_strings:
-            info.append(string)
-    return info
-
-
-def extract_series_title_feature(soup):
-    ret = []
-    table = soup.find('li', attrs={'class': 'js-collection-item'})
-    for item in table.findAll('div', attrs={'class': 'grid-item-padding'}):
-        movie = [item.a.text.strip(), item.a['href']]
-        ret.append(movie)
-    return ret
-
-
 def valueIfDefinedOrNONE(value):
     return value if value else "NONE"
 
 
-def establish_table(content):
-    soup = BeautifulSoup(content, 'html5lib')
-    table = soup.find('div', attrs={'class': 'column small-16 medium-8 large-10'})
-    cmsp_length = None
-    if not table:
-        # desperate attempt to salvage the effort
-        cmsp = extract_series_title_feature(soup)
-        cmsp_length = cmsp[0][0]
-        r = requests.get(cmsp[0][1])
-        soup = BeautifulSoup(content, 'html5lib')
-        table = soup.find('div', attrs={'class': 'column small-16 medium-8 large-10'})
-    return cmsp_length, table
+def extract_director(item):
+    return extract_from_dict(item, 'director', 'name')
 
 
-def extract_info_len4(info):
-    # hack around episode names for some 'features' and sometimes alternate titles
-    if info[0].find('“') >= 0 or info[0].find('(') >= 0:
-        diryrcnty = info[1]
-        stars = info[2]
-        descr = info[3]
-        ex_descr = info[0]
+def extract_country(item):
+    return extract_from_dict(item, 'countryOfOrigin', 'name')
+
+
+def extract_stars(item):
+    ext_stars = extract_from_dict(item, 'actor', 'name')
+    if not ext_stars:
+        ext_stars = ''
+    return ext_stars
+
+
+def extract_from_dict(item, key, value):
+    data_dict = json.loads(item.string)
+    outStr = ''
+    if key in data_dict:
+        for item in data_dict[key]:
+            outStr = outStr + item[value] + '; '
+
+    if outStr != '':
+        return outStr[:-2]
     else:
-        diryrcnty, stars, descr, ex_descr = info
-    country, director, year = process_diryrcnty(diryrcnty)
-    descr = descr + '\n\n' + ex_descr
-    return country, descr, director, stars, year
+        return None
 
 
-def extract_info_len3(info):
-    diryrcnty, stars, descr = info
-
-    # hack around episode names for some 'features' and sometimes alternate titles
-    if not diryrcnty.find('•') >= 0:
-        descr = diryrcnty + "\n\n" + descr
-        diryrcnty = stars
-        stars = ""
-
-    # sometimes you are here but have no stars listed in the movie.
-    # i.e., you have diryrcnty descr1 and descr2. Look for this case
-    elif "Starring" not in stars:
-        descr = stars + "\n\n" + descr
-        stars = ""
-    country, director, year = process_diryrcnty(diryrcnty)
-    return country, descr, director, stars, year
+def extract_title_year_length(item):
+    data_dict = json.loads(item.string)
+    return data_dict['name'], data_dict['datePublished'], data_dict['duration']
 
 
-def needs_year_country_swap(year):
-    year = year.strip()
-    return not year.isnumeric()
+def sanitize_year(year):
+    return year[0:4]
 
 
-def extract_info_len2(info):
-    country = descr = director = year = stars = ''
-    diryrcnty, descr = info
-    # july 2024 monthly update was terrible, hack around no newline in directed by line
-    if diryrcnty.find("Starring") >= 0:
-        stars = diryrcnty[diryrcnty.find("Starring"):]
-        diryrcnty = diryrcnty[:diryrcnty.find("Starring")]
+def sanitize_length(length):
+    hours = minutes = seconds = '00'
 
-    if '•' in diryrcnty:
-        country, director, year = process_diryrcnty(diryrcnty)
+    length = length[2:] # strip the 'PT'
+    index = length.find('H')
+    if index != -1:
+        hours = length[:index]
+        length = length[index + 1:]
+    index = length.find('M')
+    if index != -1:
+        minutes = length[:index]
+        minutes = "0" + minutes
+        minutes = minutes[-2:]
+        length = length[index + 1:]
+    index = length.find('S')
+    if index != -1:
+        seconds = length[:index]
+        seconds = "0" + seconds
+        seconds = seconds[-2:]
+
+    if '00' not in hours:
+        return hours + ':' + minutes + ':' + seconds
     else:
-        descr = diryrcnty + '\n\n' + descr
-    return country, descr, director, stars, year
+        return minutes + ':' + seconds
 
 
-def process_diryrcnty(diryrcnty):
-    country = director = year = ''
-    if '•' in diryrcnty:
-        splits = diryrcnty.split('•')
-        if len(splits) == 3:
-            director, year, country = splits
-        if len(splits) == 2:
-            year, country = splits
-    return country, director, year
-
-
-def sanitize_data(country, director, length, stars, title, year):
-    if stars:
-        stars = stars.replace("Starring ", "")
-        stars = stars.replace(',', ';')
-        stars = stars.strip()
-
+def santize_title(title):
     if title[0:4] == "The ":
         title = title[4:] + ", " + title[0:3]
     if title[0:2] == "A ":
         title = title[2:] + ", " + title[0:1]
-    just_title = title
-
-    if year:
-        title = title + " (" + year.strip() + ")"
-    else:
-        title = title + " (NONE)"
-
-    if '•' in length:
-        length = length.split('•')[1].strip()
-
-    if director:
-        director = director.replace("Directed ", "")
-        director = director.replace("by ", "")
-        director = director.replace("By ", "")
-        director = director.replace(" and ", ",")
-        director = director.replace(",", ";")
-        director = director.replace(";;", ";")
-        director = director.strip()
-
-    if country:
-        country = country.replace(',', ';')
-        country = country.strip()
-    return country, director, length, stars, title, just_title
-
-
-def parse_info(info):
-    country, descr, director, stars, year = '','','','',''
-    if len(info) == 4:
-        country, descr, director, stars, year = extract_info_len4(info)
-    if len(info) == 3:
-        country, descr, director, stars, year = extract_info_len3(info)
-    if len(info) == 2:
-        country, descr, director, stars, year = extract_info_len2(info)
-    if len(info) == 1:
-        descr = info[0]
-    # I know of one instance in the Criterion web site  where the country
-    # and year are swapped. It's in the listing for Breathless (1960).
-    # This movie is constantly being added to lists. This is a bit of code
-    # to fix the issue
-    if needs_year_country_swap(year):
-        year, country = country, year
-    return country, descr, director, stars, year
-
+    title = title.replace(";", "_")
+    return title
 
 class MovieParse:
     def __init__(self, url, time_supplied=None):
         self.url = url
         r = requests.get(url)
-        cmsp_length, table = establish_table(r.content)
-        diryrcnty = ''
-        title, length = extract_title_length(table)
-        info = extract_info(table)
-        country, descr, director, stars, year = parse_info(info)
+        soup = BeautifulSoup(r.content, 'html5lib')
+        self.director = ''
+        self.collect_movie_data(soup)
 
-        country, director, length, stars, title, just_title \
-            = sanitize_data(country, director, length, stars, title, year)
+        self.title = santize_title(self.title)
+        self.year = sanitize_year(self.year)
+        self.length = sanitize_length(self.length)
+        self.titleWithYear = self.title + ' (' + self.year + ')'
 
-        self.length = length
-        if cmsp_length:
-            self.length = cmsp_length
-        if time_supplied:
-            self.length = time_supplied
-        self.just_title = just_title
-        self.title = title
-        self.director = director
-        self.country = country
-        self.stars = stars
-        self.descr = descr
-        self.year = year.strip()
+    def collect_movie_data(self, soup: BeautifulSoup):
+        table = soup.find('p', attrs={'class': 'Hero-module-less-module__epcjfa__description'})
+        if table is not None:
+            self.descr = table.text
+        table = soup.find('main', attrs={'class': 'main-content'})
+        for item in table.contents:
+            if item.string is None:
+                continue
+            if '"director"' in item.string:
+                self.director = extract_director(item)
+            if 'countryOfOrigin' in item.string:
+                self.country = extract_country(item)
+                self.stars = extract_stars(item)
+                self.title, self.year, self.length = extract_title_year_length(item)
 
-
-    def get_parsed_info(self):
-        return [self.just_title, self.year, self.title, self.director, self.country, self.stars,
-                self.descr, self.length, self.url]
-
-    def print_info(self, supplied_length=None):
+    def print_info(self):
 
         print(self.url)
-        if not supplied_length:
-            print(self.length)
-        print(self.title)
-        print('##' + self.title + ' Watched')
+        print(self.length)
+        print(self.titleWithYear)
 
         print(valueIfDefinedOrNONE(self.director))
         print(valueIfDefinedOrNONE(self.country))
         print(valueIfDefinedOrNONE(self.stars))
         print(valueIfDefinedOrNONE(self.descr))
 
-    def addViaApi(self, supplied_length=None, collection=None):
-        put_uri = "http://localhost:8080/rest/movie"
-        movie_dto = {"title": self.just_title,
-                     "year": self.year,
-                     "actors": self.stars,
-                     "directors": self.director,
-                     "countries": self.country,
-                     "collections": collection,
-                     "description": self.descr}
-        movie_length = self.length
-        if supplied_length:
-            movie_length = supplied_length
-        movie_dto["duration"] = movie_length
 
-        # print the json instead of calling api
-        print(json.dumps(movie_dto))
-        # response = requests.put(put_uri, json=movie_dto)
-        # if response.status_code != 200:
-        #     print("Error")
+    def get_parsed_info(self):
+        return [self.title, self.year, self.titleWithYear, self.director, self.country, self.stars,
+                self.descr, self.length, self.url]
 
 
 def main():

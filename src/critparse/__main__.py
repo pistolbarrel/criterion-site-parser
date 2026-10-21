@@ -15,7 +15,7 @@ def main():
         if not args.noprint:
             print('Examined ' + parser.url)
             OutText.movie_info_to_text(parser.url_type, parser.series_name, parser.description,
-                                       parser.all_movie_parsed_data, parser.extracted_episode_info)
+                                       parser.all_movie_parsed_data)
 
 
 def process_args():
