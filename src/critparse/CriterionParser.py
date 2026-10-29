@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import argparse
-from critparse import CriterionParser, CriterionMovieParse, OutText
+from critparse import CriterionParser, CriterionMovieParse, OutText, CriterionSupplementParse
 
 
 # https:\\www.criterionchannel.com
@@ -44,8 +44,9 @@ class CriterionParser:
         """
         if self.url_type == 'movie':
             self.gather_movie_list_info([[self.url, ""]])
-            self.series_name, self.extracted_episode_info = CriterionParser.get_collection_info(self.soup)
-            self.gather_movie_list_info(self.extracted_episode_info)
+            if not args.skipsupplements:
+                self.series_name, self.extracted_episode_info = CriterionParser.get_collection_info(self.soup)
+                self.gather_movie_list_info(self.extracted_episode_info)
 
         elif self.url_type == 'collection':
             self.series_name, self.extracted_episode_info = CriterionParser.get_collection_info(self.soup)
@@ -61,10 +62,13 @@ class CriterionParser:
         """
         for movie in movies_list:
             url = movie[0]
-            if '/series/' in url:
-                continue
-            movie_parser = CriterionMovieParse.MovieParse(movie[0])
-            self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
+            movie_parser = None
+            if 'films' in url:
+                movie_parser = CriterionMovieParse.MovieParse(url)
+            elif 'supplements' in url:
+                movie_parser = CriterionSupplementParse.SupplementParse(url)
+            if movie_parser is not None:
+                self.all_movie_parsed_data.append(movie_parser.get_parsed_info())
 
     def __explore_possible_collections(self, movies_list):
         """

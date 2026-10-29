@@ -24,7 +24,7 @@ def process_args():
     parser.add_argument("url", help="URL to parse")
     parser.add_argument("-n", "--noprint", help="Suppress printing the movie info", action='store_true')
     parser.add_argument("-a", "--api", help="Add movie via REST api", action='store_true')
-    parser.add_argument("-s", "--skipdiscovery", help="Skip the discovery of collections", action='store_true')
+    parser.add_argument("-s", "--skipsupplements", help="Skip the supplements of a movie or edition", action='store_true')
     parser.add_argument("-q", "--quiet", help="Suppress the printing of the title of each movie as it is added",
                         action='store_true')
     args = parser.parse_args()
