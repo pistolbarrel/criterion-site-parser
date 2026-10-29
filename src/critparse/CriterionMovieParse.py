@@ -94,7 +94,7 @@ class MovieParse:
         self.titleWithYear = self.title + ' (' + self.year + ')'
 
     def collect_movie_data(self, soup: BeautifulSoup):
-        table = soup.find('p', attrs={'class': 'Hero-module-less-module__epcjfa__description'})
+        table = soup.find('p', attrs={'class': 'epcjfa_description'})
         if table is not None:
             self.descr = table.text
         table = soup.find('main', attrs={'class': 'main-content'})

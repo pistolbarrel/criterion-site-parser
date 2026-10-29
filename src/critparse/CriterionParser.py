@@ -44,6 +44,8 @@ class CriterionParser:
         """
         if self.url_type == 'movie':
             self.gather_movie_list_info([[self.url, ""]])
+            self.series_name, self.extracted_episode_info = CriterionParser.get_collection_info(self.soup)
+            self.gather_movie_list_info(self.extracted_episode_info)
 
         elif self.url_type == 'collection':
             self.series_name, self.extracted_episode_info = CriterionParser.get_collection_info(self.soup)
@@ -119,13 +121,13 @@ class CriterionParser:
             collectionTitle = collectionTitle[:index]
         series_name = "Criterion:" + collectionTitle
 
-        table = soup.find('ul', attrs={'class': 'CardRail-module-less-module__P8X20G__grid'})
+        table = soup.find('ul', attrs={'class': 'P8X20G_grid'})
         for card in table.contents:
             url = imgTitle = ''
-            itemUrl = card.find('a', attrs={'class': 'PlaylistCard-module-less-module__Xfr99W__overlayLink'})
+            itemUrl = card.find('a', attrs={'class': 'Xfr99W_overlayLink'})
             if itemUrl is not None:
                 url = 'https://www.criterionchannel.com' + itemUrl['href']
-            itemImgTitle = card.find('img', attrs={'class': 'CardImage-module-less-module__vvKVuW__image lazyload'})
+            itemImgTitle = card.find('img', attrs={'class': 'vvKVuW_image lazyload'})
             if itemImgTitle is not None:
                 imgTitle = itemImgTitle['alt']
 
